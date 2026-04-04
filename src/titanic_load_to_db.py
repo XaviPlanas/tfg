@@ -1,32 +1,56 @@
 import pandas as pd
 from sqlalchemy.types import Integer, String, Float, Numeric
+from sqlalchemy import create_engine, Table, Column, MetaData
+from sqlalchemy import Integer, Float, String, Numeric
 
 from titanic_utils import mysql_engine, postgres_engine, dataset
 
-# Leer dataset Titanic
-df = pd.read_csv(dataset["raw"]["file"])
-src_table = dataset["raw"]["table"]
+load_method = 'pandas' # pandas | orm 
 
-df_modified = pd.read_csv(dataset["modified"]["file"])
-dst_table = dataset["modified"]["table"]
+#Detectamos automáticamente las definiciones de df de Pandas
+def orm_autotype(series):
 
-# Mapear tipos de columna para SQL
-dtype_mapping = {
-    'PassengerId': Integer(),
-    'Survived': Integer(),
-    'Pclass': Integer(),
-    'Name': String(255),
-    'Sex': String(10),
-    'Age': Float(),
-    'SibSp': Integer(),
-    'Parch': Integer(),
-    'Ticket': String(50),
-    'Fare': Numeric(10,3),
-    'Cabin': String(50),
-    'Embarked': String(5)
-}
+    if pd.api.types.is_integer_dtype(series):
+        return Integer()
 
-def load_to_db(df, table_name, engine, dtype_mapping):
+    if pd.api.types.is_float_dtype(series):
+        return Float()
+
+    if pd.api.types.is_numeric_dtype(series):
+        return Numeric()
+
+    return String(255)
+
+#Recrea tabla e inserta datos
+def orm_to_db(df, table_name, engine):
+
+    metadata = MetaData()
+
+    columns = []
+
+    for col in df.columns:
+
+        col_type = orm_autotype(df[col])
+
+        if col == "PassengerId":
+            columns.append(Column(col, col_type, primary_key=True))
+        else:
+            columns.append(Column(col, col_type))
+
+    table = Table(table_name, metadata, *columns)
+
+    metadata.drop_all(engine, [table])
+    metadata.create_all(engine)
+
+    records = df.to_dict(orient="records")
+
+    with engine.begin() as conn:
+        conn.execute(table.insert(), records)
+
+    print(f"{table_name} cargada en {engine.url.database}")
+
+#Método para hacer la carga con Pandas
+def pandas_to_db(df, table_name, engine, dtype_mapping):
     try:
         df.to_sql(name=table_name, con=engine, if_exists='replace', index=False, dtype=dtype_mapping)
         print(f"{table_name} cargada correctamente en {engine.url.database}")
@@ -34,10 +58,43 @@ def load_to_db(df, table_name, engine, dtype_mapping):
     except Exception as e:
         print(f"Error cargando {table_name} en {engine.url.database}: {e}")
 
-# Cargar en MySQL
-load_to_db(df, src_table, mysql_engine, dtype_mapping)
-load_to_db(df, dst_table, mysql_engine, dtype_mapping)
+# Leer dataset Titanic
+df = pd.read_csv(dataset["raw"]["file"])
+table_raw = dataset["raw"]["table"]
 
-# Cargar en PostgreSQL
-load_to_db(df, src_table, postgres_engine, dtype_mapping)
-load_to_db(df, dst_table, postgres_engine, dtype_mapping)
+df_modified = pd.read_csv(dataset["modified"]["file"])
+table_modified = dataset["modified"]["table"]
+
+if load_method == 'orm':
+    # Cargar en MySQL
+    orm_to_db(df, table_raw, mysql_engine)
+    orm_to_db(df, table_modified, mysql_engine)
+
+    # Cargar en PostgreSQL
+    orm_to_db(df, table_raw, postgres_engine)
+    orm_to_db(df, table_modified, postgres_engine)
+
+elif load_method == 'pandas' :
+    
+    # Definición explícita de tipos de columna para SQL en Pandas
+    dtype_mapping = {
+        'PassengerId': Integer(),
+        'Survived': Integer(),
+        'Pclass': Integer(),
+        'Name': String(255),
+        'Sex': String(10),
+        'Age': Float(),
+        'SibSp': Integer(),
+        'Parch': Integer(),
+        'Ticket': String(50),
+        'Fare': Numeric(10,3),
+        'Cabin': String(50),
+        'Embarked': String(5)
+    }
+    # Cargar en MySQL
+    pandas_to_db(df, table_raw, mysql_engine, dtype_mapping)
+    pandas_to_db(df_modified, table_modified, mysql_engine, dtype_mapping)
+
+    # Cargar en PostgreSQL
+    pandas_to_db(df, table_raw, postgres_engine, dtype_mapping)
+    pandas_to_db(df_modified, table_modified, postgres_engine, dtype_mapping)
