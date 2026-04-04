@@ -9,9 +9,8 @@ MYSQL_HOST = "localhost"
 MYSQL_PORT = "3306"
 MYSQL_DB = "pocdb"
 
-mysql_engine = create_engine(
-    f"mysql+mysqlconnector://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
-)
+mysql_engine_url = f"{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
+mysql_engine = create_engine(f"mysql+mysqlconnector://{mysql_engine_url}")
 
 # ---------------------------
 # Configuración PostgreSQL (hardcodeada)
@@ -22,9 +21,8 @@ PG_HOST = "localhost"
 PG_PORT = "5432"
 PG_DB = "tfgdb"
 
-postgres_engine = create_engine(
-    f"postgresql+psycopg2://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
-)
+postgres_engine_url = f"{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DB}"
+postgres_engine = create_engine(f"postgresql+psycopg2://{postgres_engine_url}")
 
 # ---------------------------
 # Función de prueba de conexión
