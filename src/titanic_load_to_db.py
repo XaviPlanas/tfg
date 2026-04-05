@@ -1,11 +1,12 @@
 import pandas as pd
+import numpy as np
 from sqlalchemy.types import Integer, String, Float, Numeric
 from sqlalchemy import create_engine, Table, Column, MetaData
 from sqlalchemy import Integer, Float, String, Numeric
 
 from titanic_utils import mysql_engine, postgres_engine, dataset
 
-load_method = 'pandas' # pandas | orm 
+load_method = 'orm' # pandas | orm 
 
 #Detectamos automáticamente las definiciones de df de Pandas
 def orm_autotype(series):
@@ -14,7 +15,8 @@ def orm_autotype(series):
         return Integer()
 
     if pd.api.types.is_float_dtype(series):
-        return Float()
+        #return Float()
+        return Numeric(10,3)
 
     if pd.api.types.is_numeric_dtype(series):
         return Numeric()
@@ -42,7 +44,9 @@ def orm_to_db(df, table_name, engine):
     metadata.drop_all(engine, [table])
     metadata.create_all(engine)
 
-    records = df.to_dict(orient="records")
+    # Reemplazar NaN de Pandas por None
+    df_clean = df.replace({np.nan: None})
+    records = df_clean.to_dict(orient="records")
 
     with engine.begin() as conn:
         conn.execute(table.insert(), records)
