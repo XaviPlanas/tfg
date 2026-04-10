@@ -1,6 +1,11 @@
+from datadiff_classifier import classifier
 from titanic_utils import mysql_engine, mysql_engine_url, postgres_engine_url, dataset 
 from data_diff import connect_to_table, diff_tables, disable_tracking
 from sqlalchemy import inspect
+
+from tfg.datadiff_classifier.classifier import DiffClassifier
+from tfg.datadiff_classifier.models import DiffRow
+
 
 
 disable_tracking()
