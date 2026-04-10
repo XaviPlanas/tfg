@@ -6,3 +6,4 @@ data/raw/
 data/modified/
 data/db/
 .vscode/
+src/tfg/.env
