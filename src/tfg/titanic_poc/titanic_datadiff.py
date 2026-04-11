@@ -59,4 +59,5 @@ print("Eliminados:", removed)
 
 filas_a_comparar = DiffRow(primary_key, left, right, "mysql", "postgresql")
 clasificador_diff = DiffClassifier("diff 1")
-clasificador_diff.classify(filas_a_comparar)
+resultado = clasificador_diff.classify(filas_a_comparar)
+print(resultado)
