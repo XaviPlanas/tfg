@@ -1,13 +1,17 @@
 {
- "version": "0.2.0",
- "configurations": [
-
-  {
-   "name": "Run comparison",
-   "type": "python",
-   "request": "launch",
-   "program": "${workspaceFolder}/src/titanic_datadiff.py",
-   "console": "integratedTerminal"
-  }
- ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run TFG module",
+            "type": "python",
+            "request": "launch",
+            // "module": "tfg.datadiff_classifier.main",
+            "module": "tfg.titanic_poc.titanic_datadiff",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "envFile": "${workspaceFolder}/src/tfg/.env"
+        }
+    ]
 }
