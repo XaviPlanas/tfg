@@ -4,7 +4,7 @@ from typing import Optional
 
 class IAModel(Enum):
     ANTHROPIC   = "claude-opus-4-5"
-    OLLAMA      = "OLLAMA"
+    OLLAMA      = "gemma3"
     QWEN        = "QWEN"
 
 class DiffCategory(Enum):
