@@ -1,5 +1,5 @@
 from collections import defaultdict
-from models import ClassificationResult, DiffCategory
+from tfg.datadiff_classifier.models import ClassificationResult, DiffCategory
 
 def generate_report(results: list[ClassificationResult]) -> dict:
     """
