@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - tfg/data/ollama:/root/.ollama
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1  
+    restart: unless-stopped
+    environment:
+      # Bind to all interfaces (required for container networking)
+      - OLLAMA_HOST=0.0.0.0
+      # Set custom port (default: 11434)
+      - OLLAMA_PORT=11434
+      # Enable debug logging
+      - OLLAMA_DEBUG=1
+      # Set number of parallel requests
+      - OLLAMA_NUM_PARALLEL=4
+      # Maximum loaded models
+      - OLLAMA_MAX_LOADED_MODELS=2
+      # Keep models in memory (seconds, 0 = forever)
+      - OLLAMA_KEEP_ALIVE=300

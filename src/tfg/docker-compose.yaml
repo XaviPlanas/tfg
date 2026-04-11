@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    volumes:
+      - /home/xavi/tfg/data/db/pg:/var/lib/postgresql/data
+    container_name: postgres_poc_tfg
+    environment:
+      POSTGRES_USER: poc
+      POSTGRES_PASSWORD: poc5432
+      POSTGRES_DB: tfgdb
+    ports:
+      - "5432:5432"
+
+  mysql:
+    image: mysql:8
+    container_name: mysql_poc_tfg
+    volumes:
+      - /home/xavi/tfg/data/db/mysql:/var/lib/mysql  
+    environment:
+      MYSQL_ROOT_PASSWORD: pocroot
+      MYSQL_DATABASE: pocdb
+      MYSQL_USER: poc
+      MYSQL_PASSWORD: poc3306
+    ports:
+      - "3306:3306"
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    network_mode: host
+    volumes:
+      - /home/xavi/tfg/data/ollama:/root/.ollama
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1  
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Madrid
+      # Bind to all interfaces (required for container networking)
+      - OLLAMA_HOST=0.0.0.0
+      # Set custom port (default: 11434)
+      - OLLAMA_PORT=11434
+      # Enable debug logging
+      - OLLAMA_DEBUG=1
+      # Set number of parallel requests
+      - OLLAMA_NUM_PARALLEL=4
+      # Maximum loaded models
+      - OLLAMA_MAX_LOADED_MODELS=2
+      # Keep models in memory (seconds, 0 = forever)
+      - OLLAMA_KEEP_ALIVE=300
