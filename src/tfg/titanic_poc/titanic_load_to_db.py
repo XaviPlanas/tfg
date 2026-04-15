@@ -4,7 +4,7 @@ from sqlalchemy.types import Integer, String, Float, Numeric
 from sqlalchemy import create_engine, Table, Column, MetaData
 from sqlalchemy import Integer, Float, String, Numeric
 
-from .titanic_utils import mysql_engine, postgres_engine, dataset
+from .titanic_utils import Config
 
 load_method = 'pandas' # pandas | orm 
 
@@ -63,20 +63,20 @@ def pandas_to_db(df, table_name, engine, dtype_mapping):
         print(f"Error cargando {table_name} en {engine.url.database}: {e}")
 
 # Leer dataset Titanic
-df = pd.read_csv(dataset["raw"]["file"])
-table_raw = dataset["raw"]["table"]
+df = pd.read_csv(Config.DATASET["raw"]["file"])
+table_raw = Config.DATASET["raw"]["table"]
 
-df_modified = pd.read_csv(dataset["modified"]["file"])
-table_modified = dataset["modified"]["table"]
+df_modified = pd.read_csv(Config.DATASET["modified"]["file"])
+table_modified = Config.DATASET["modified"]["table"]
 
 if load_method == 'orm':
     # Cargar en MySQL
-    orm_to_db(df, table_raw, mysql_engine)
-    orm_to_db(df, table_modified, mysql_engine)
+    orm_to_db(df, table_raw, Config.mysql_engine)
+    orm_to_db(df, table_modified, Config.mysql_engine)
 
     # Cargar en PostgreSQL
-    orm_to_db(df, table_raw, postgres_engine)
-    orm_to_db(df, table_modified, postgres_engine)
+    orm_to_db(df, table_raw, Config.postgres_engine)
+    orm_to_db(df, table_modified, Config.postgres_engine)
 
 elif load_method == 'pandas' :
     
@@ -96,9 +96,9 @@ elif load_method == 'pandas' :
         'Embarked': String(5)
     }
     # Cargar en MySQL
-    pandas_to_db(df, table_raw, mysql_engine, dtype_mapping)
-    pandas_to_db(df_modified, table_modified, mysql_engine, dtype_mapping)
+    pandas_to_db(df, table_raw, Config.mysql_engine, dtype_mapping)
+    pandas_to_db(df_modified, table_modified, Config.mysql_engine, dtype_mapping)
 
     # Cargar en PostgreSQL
-    pandas_to_db(df, table_raw, postgres_engine, dtype_mapping)
-    pandas_to_db(df_modified, table_modified, postgres_engine, dtype_mapping)
+    pandas_to_db(df, table_raw, Config.postgres_engine, dtype_mapping)
+    pandas_to_db(df_modified, table_modified, Config.postgres_engine, dtype_mapping)
