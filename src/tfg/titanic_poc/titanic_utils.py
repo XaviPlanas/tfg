@@ -22,9 +22,12 @@ class Config:
         "password": "poc3306",
         "host": "localhost",
         "port": "3306",
-        "db": "pocdb"
+        "db": "pocdb",
+        "dialect" : 'mysql',
+        "driver" : 'mysqlconnector'
     }
     url_mysql = f"{MYSQL['user']}:{MYSQL['password']}@{MYSQL['host']}:{MYSQL['port']}/{MYSQL['db']}"
+    
     
     # PostgreSQL
     POSTGRES = {
@@ -32,10 +35,12 @@ class Config:
         "password": "poc5432",
         "host": "localhost",
         "port": "5432",
-        "db": "tfgdb"
+        "db": "tfgdb",
+        "dialect" : "postgresql",
+        "driver" : "psycopg2"
     }
     url_postgres = f"{POSTGRES['user']}:{POSTGRES['password']}@{POSTGRES['host']}:{POSTGRES['port']}/{POSTGRES['db']}"
-    
+
     def __init__(self):
         disable_tracking()  # evita tracking de API por defecto
 
