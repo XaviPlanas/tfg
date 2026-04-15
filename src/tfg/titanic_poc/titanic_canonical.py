@@ -34,10 +34,6 @@ PG_URI_DDIFF = conf.getConnectionString(Config.POSTGRES, datadiff = True)
 
 CFG_FILE  = "tfg/titanic_poc/titanic_canonical.yaml" # ejecutando desde tfg/src
 
-
-def get_table_columns(engine: Engine, table_name: str):
-    return {col["name"] for col in inspect(engine).get_columns(table_name)}
-
 def paso1_load_config():
     print(f"\n{SEPARATOR}")
     print("PASO 1 — Cargar configuración canónica")
@@ -93,7 +89,9 @@ def paso3_compare_with_datadiff():
     #      def_validate_schema_match(table1.cols, table2.cols):
     #      ¿comparar nombres o sólo igualdad de elementos?
     # Mientras asumimos que table1.cols == table2.cols y tomamos table1.cols
-    table1_cols = table1_raw.get_schema().keys()
+   
+    #table1_cols = conf.get_all_column_names( conf.get_mysql_engine(), 'titanic' )
+    table1_cols = table1_raw.get_schema().keys() # Queremos usar TableSegment en lugar de inspección SQLAlchemy
 
     diffs_raw = list(diff_tables(table1 = table1_raw,
                                  table2 = table2_raw,
