@@ -10,6 +10,7 @@ class SchemaInspector:
     """
 
     def __init__(self, connection_uri: str):
+        print(f"Connection URL: {connection_uri}")
         self.engine  = create_engine(connection_uri)
         self.mapper  = TypeMapper()
         self.dialect = self._detect_dialect()
@@ -29,7 +30,7 @@ class SchemaInspector:
 
         canonical_types = {}
         for col in columns:
-            col_name    = col["name"]
+            col_name    = f"\"{col["name"]}\""
             sql_type    = col["type"]
             nullable    = col["nullable"]
             canonical   = self.mapper.map(

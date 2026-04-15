@@ -1,9 +1,7 @@
 from sqlalchemy import create_engine
 from data_diff import disable_tracking
-
 class Config:
     DEBUG = True
-
     # Dataset
     DATASET = {
         'raw': {
@@ -15,7 +13,6 @@ class Config:
             'table': 'titanic_modified'
         }
     }
-
     # MySQL
     MYSQL = {
         "user": "poc",
@@ -26,9 +23,6 @@ class Config:
         "dialect" : 'mysql',
         "driver" : 'mysqlconnector'
     }
-    url_mysql = f"{MYSQL['user']}:{MYSQL['password']}@{MYSQL['host']}:{MYSQL['port']}/{MYSQL['db']}"
-    
-    
     # PostgreSQL
     POSTGRES = {
         "user": "poc",
@@ -39,27 +33,29 @@ class Config:
         "dialect" : "postgresql",
         "driver" : "psycopg2"
     }
-    url_postgres = f"{POSTGRES['user']}:{POSTGRES['password']}@{POSTGRES['host']}:{POSTGRES['port']}/{POSTGRES['db']}"
-
     def __init__(self):
-        disable_tracking()  # evita tracking de API por defecto
+        disable_tracking()
 
-        self.mysql_engine = self._create_mysql_engine()
-        self.postgresql_engine = self._create_postgres_engine()
+        self.mysql_engine = self._create_engine(self.MYSQL)
+        self.postgresql_engine = self._create_engine(self.POSTGRES)
 
-    # ---------------------------
-    # Creación de engines
-    # ---------------------------
-    def _create_mysql_engine(self):
+    @staticmethod
+    def get_url(cfg: dict) -> str:
+        return f"{cfg['user']}:{cfg['password']}@{cfg['host']}:{cfg['port']}/{cfg['db']}"
 
-        return create_engine(f"mysql+mysqlconnector://{self.url_mysql}")
+    @staticmethod
+    def getConnectionString(cfg: dict, datadiff=False):
+        if datadiff:
+            return f"{cfg['dialect']}://{Config.get_url(cfg)}"
+        return f"{cfg['dialect']}+{cfg['driver']}://{Config.get_url(cfg)}"
 
-    def _create_postgres_engine(self):
-        return create_engine(f"postgresql+psycopg2://{self.url_postgres}")
+    def _create_engine(self, cfg: dict):
+        return create_engine(self.getConnectionString(cfg))
 
     # ---------------------------
     # Test conexiones
     # ---------------------------
+    @staticmethod
     def test_connections(self):
         try:
             with self.mysql_engine.connect():

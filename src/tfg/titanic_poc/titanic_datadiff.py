@@ -1,9 +1,11 @@
 from .titanic_utils import Config
 from data_diff import connect_to_table, diff_tables
-from sqlalchemy import inspect
+from sqlalchemy import inspect, Engine 
 
 from tfg.datadiff_classifier.classifier import DiffClassifier
 from tfg.datadiff_classifier.models import DiffRow
+
+cfg = Config()
 
 table_raw = Config.dataset["raw"]["table"]
 table_modified = Config.dataset["modified"]["table"]
@@ -14,14 +16,16 @@ mysql_all_columns=[col["name"] for col in mysql_metadata.get_columns(table_raw)]
 #mysql_all_columns = []
 
 table_mysql = connect_to_table(
-    f"mysql://{Config.mysql_engine_url}",
+    #f"{Config.MYSQL["dialect"]}://{Config.mysql_engine_url}",
+    cfg.getURL(Config.MYSQL),
     table_name=table_raw,
     key_columns=primary_key,
     extra_columns = mysql_all_columns
 )
 
 table_pg = connect_to_table(
-    f"postgresql://{Config.postgres_engine_url}",
+    #f"{Config.MYSQL["dialect"]}://{Config.postgres_engine_url}",
+    cfg.getURL(Config.POSTGRES),
     table_name=table_modified,
     key_columns=("PassengerId"),
     extra_columns = mysql_all_columns
@@ -56,7 +60,7 @@ if Config.DEBUG :
    print(60*'-')
    print(f"\nLeft: {left}\nRight: {right}")
    print(60*'=')
-   
+
 filas_a_comparar = DiffRow(primary_key, left, right, "mysql", "postgresql")
 clasificador_diff = DiffClassifier("diff 1")
 resultado = clasificador_diff.classify(filas_a_comparar)

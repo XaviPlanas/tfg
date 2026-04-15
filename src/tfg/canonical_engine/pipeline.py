@@ -82,7 +82,7 @@ class CanonicalPipeline:
                 fallback_fn = self._resolve_fallback(e.transformation)
                 columns[col_name] = CanonicalColumn(
                     name              = col_name,
-                    sql_expression    = f"{col_name}",  # Sin transformar
+                    sql_expression    = col_name,  # Sin transformar
                     python_fallback   = fallback_fn,
                     requires_download = True,
                     information_loss  = canonical_type.information_loss,
@@ -110,6 +110,7 @@ class CanonicalPipeline:
 
     def _build_view_sql(self, columns: dict) -> str:
         expressions = [col.sql_expression for col in columns.values()]
+
         return (
             f"SELECT\n"
             f"    {','.join(chr(10)+'    ' for _ in [''])}"
