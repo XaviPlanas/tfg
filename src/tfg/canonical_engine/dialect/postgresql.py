@@ -65,3 +65,18 @@ class PostgreSQLDialect(BaseDialect):
         if isinstance(canonical_type, TimestampCanonical):
             return "'1970-01-01 00:00:00+00'"
         return "NULL"
+    
+    def normalize_boolean(self, col: str) -> str:
+        # PostgreSQL tiene BOOLEAN nativo.
+        # El cast a INTEGER produce 0 o 1 directamente.
+        # Se incluye un CASE para cubrir representaciones textuales
+        # que pudieran haber llegado como VARCHAR en imports de CSV.
+        return (
+            f"CASE "
+            f"  WHEN {col}::text ILIKE ANY(ARRAY['true','yes','on','1','t']) "
+            f"  THEN 1 "
+            f"  WHEN {col}::text ILIKE ANY(ARRAY['false','no','off','0','f']) "
+            f"  THEN 0 "
+            f"  ELSE {col}::integer "
+            f"END"
+        )

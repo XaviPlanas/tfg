@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 class BaseDialect(ABC):
     """
-    Interfaz de dialecto SQL. Define los primitivos que cada motor
-    debe implementar. Los tipos canónicos usan estos primitivos
+    Interfaz de dialecto SQL. Define las primitivas que cada motor
+    debe implementar. Los tipos canónicos usan estas primitivas
     para construir sus expresiones sin conocer el motor destino.
     """
     name: str = ""
@@ -76,6 +76,16 @@ class BaseDialect(ABC):
         """Valor de reemplazo para NULL según el tipo canónico."""
         ...
 
+    # ── Boolean ────────────────────────────────────────────────────
+
+    @abstractmethod
+    def normalize_boolean(self, col: str) -> str:
+        """
+        Normaliza cualquier representación de booleano a un entero
+        0 o 1. El resultado es comparable entre motores independientemente
+        de si el tipo original era BOOLEAN, TINYINT(1) o una cadena.
+        """
+        ...
 
 class UnsupportedTransformation(Exception):
     """
@@ -87,5 +97,6 @@ class UnsupportedTransformation(Exception):
         self.transformation = transformation
         super().__init__(
             f"El dialecto '{dialect}' no soporta '{transformation}' "
-            f"de forma nativa. Se usará el fallback Python."
+            f"de forma nativa. Se usará el fallback Python."  
+            #FIXME: sólo si existe fallback definido ... se debería comprobar
         )

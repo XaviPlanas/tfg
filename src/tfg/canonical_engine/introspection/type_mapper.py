@@ -9,6 +9,12 @@ class TypeMapper:
     Mapea tipos SQLAlchemy (inferidos del motor) a tipos canónicos.
     Este mapeo es la capa de traducción entre la representación
     física del dato y su semántica canónica.
+    Se contemplan salidas de forma canónica:
+        - Numeric
+        - Integer
+        - Boolean
+        - Text
+        - Timestamp
     """
 
     def map(self, col_name, sql_type, nullable, dialect) -> "CanonicalType":
@@ -30,13 +36,13 @@ class TypeMapper:
                 scale       = sql_type.precision or 10,
             )
 
-        # ── Enteros y booleanos ───────────────────────────────────
+        # ── Booleanos ───────────────────────────────────
         if isinstance(sql_type, sa_types.Boolean):
             return BooleanCanonical(
                 column_name = col_name,
                 nullable    = nullable,
             )
-
+        # ── Enteros   ───────────────────────────────────
         if isinstance(sql_type, (sa_types.Integer, sa_types.SmallInteger,
                                   sa_types.BigInteger)):
             return IntegerCanonical(
