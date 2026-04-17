@@ -6,6 +6,7 @@ from sqlalchemy import Integer, Float, String, Numeric
 
 from .titanic_utils import Config
 
+cfg = Config()
 load_method = 'pandas' # pandas | orm 
 
 #Detectamos automáticamente las definiciones de df de Pandas
@@ -96,9 +97,9 @@ elif load_method == 'pandas' :
         'Embarked': String(5)
     }
     # Cargar en MySQL
-    pandas_to_db(df, table_raw, Config.mysql_engine, dtype_mapping)
-    pandas_to_db(df_modified, table_modified, Config.mysql_engine, dtype_mapping)
+    pandas_to_db(df, table_raw, cfg.mysql_engine, dtype_mapping)
+    pandas_to_db(df_modified, table_modified, cfg.mysql_engine , dtype_mapping)
 
     # Cargar en PostgreSQL
-    pandas_to_db(df, table_raw, Config.postgres_engine, dtype_mapping)
-    pandas_to_db(df_modified, table_modified, Config.postgres_engine, dtype_mapping)
+    pandas_to_db(df, table_raw, cfg.postgresql_engine, dtype_mapping)
+    pandas_to_db(df_modified, table_modified, cfg.postgresql_engine, dtype_mapping)
