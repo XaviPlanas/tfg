@@ -1,6 +1,6 @@
 import json
 
-from ollama import Client
+#from ollama import Client
 from tfg.datadiff_classifier.models import DiffRow, ClassificationResult, DiffCategory
 from tfg.datadiff_classifier.prompts import CLASSIFY_PROMPT, CLASSIFY_PROMPT_FROM_DICT_OPTIMIZED_2, CLASSIFY_PROMPT_FROM_DICT_OPTIMIZED_GEMMA2_2b
 
