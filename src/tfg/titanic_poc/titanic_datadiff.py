@@ -6,7 +6,7 @@ from tfg.datadiff_classifier.classifier import DiffClassifier
 from tfg.datadiff_classifier.models import DiffRow
 
 cfg = Config()
-IA = False
+IA = True
 
 table_raw = Config.DATASET["raw"]["table"]
 table_modified = Config.DATASET["modified"]["table"]
@@ -52,6 +52,7 @@ left_idx = set(left.keys())
 insert = right_idx - left_idx
 delete = left_idx  - right_idx
 update = right_idx & left_idx
+all_pk = right_idx | left_idx
 
 if Config.DEBUG : 
    print(60*'=')
@@ -63,11 +64,22 @@ if Config.DEBUG :
    print(f"Cambios detectados por data-diff en total (2UPD + DEL + INS): {total}")
    print(60*'=')
 
-if IA: 
-   filas_a_comparar = DiffRow(primary_key, left, right, "mysql", "postgresql")
-   clasificador_diff = DiffClassifier("diff 1")
-   resultado = clasificador_diff.classify(filas_a_comparar)
-   print(resultado)
+if IA:
+   for pk in all_pk:
+      row = DiffRow(
+         key = pk,
+         row_a = right.get(pk),
+         row_b = left.get(pk),
+         source_a = 'mysql',
+         source_b = 'postgresql'
+      )
+      clasificador = DiffClassifier()
+      clasificador.classify_one_row(row)
+   
+   #filas_a_comparar = DiffRow(primary_key, left, right, "mysql", "postgresql")
+   #clasificador_diff = DiffClassifier("diff 1")
+   #resultado = clasificador_diff.classify_row_by_row(filas_a_comparar)
+   #print(resultado)
 
 # filas_a_comparar = DiffRow(primary_key, left["269"], right["269"], "mysql", "postgresql")
 # resultado = clasificador_diff.classify(filas_a_comparar)
