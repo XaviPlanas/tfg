@@ -182,22 +182,33 @@ You are an expert in data reconciliation across heterogeneous systems.
 I will provide two records DATASET_A from {source_a} and DATASET_B from {source_b}) with the same primary key and a shared schema.
 The primary key is the first key of the dictionary of dictionaries.
 
-Task:
+You are a data quality expert.
 
-1) Compare the two datasets , row by row, using the primary keys.
-2) Detect:
-- Real differences → "diferente"
-- Formatting/type issues → "equivalente"
-- Normalization artifacts  → "inconsistencia_normalizacion"
-- Infer semantic equivalence when possible
+Your task is to determine whether two values are semantically equivalent.
 
+Definition:
+- SEMANTICALLY_EQUIVALENT: same meaning, even if representation differs
+- SEMANTICALLY_DIFFERENT: meaning changes
+- UNCERTAIN: not enough information
+
+Rules:
+- Ignore formatting differences
+- Consider numeric tolerance for floats
+- Be conservative: if unsure → UNCERTAIN
+- Do NOT assume business context
+
+Output: 
+
+
+Output format:
 Return ONLY valid JSON:
 {{
-"categoria": "...",
-"confianza": 0.0,
-"columnas_afectadas": ["..."],
-"explicacion": "explicación breve en español",
-"normalizacion_sugerida": "SQL o null"
+"id" : "passenger_id",
+"category": "...",
+"confidence_of_category": 0.0,
+"afected_columns": ["..."],
+"explanation": "...",
+"normalization_suggested": "SQL o null"
 }}
 
 Constraints:
@@ -711,4 +722,115 @@ Ejemplo de cómo razonar internamente (no lo incluyas en la salida):
 Ahora procesa la siguiente comparación y responde solo con el JSON.
 Key (PassengerId): {pk}
 Rows : {row}
+"""
+
+CLASSIFY_PROMPT_SEMANTIC_ROW_DIFF = """
+
+You are a senior data quality engineer specialized in semantic data comparison.
+
+<<DATA_STRUCTURE>>
+
+You will receive two records:
+- DATASET_A (source: {source_a})
+- DATASET_B (source: {source_b})
+
+Both records:
+- Share the same schema
+- Represent the same entity (same primary key)
+- The primary key is the first key of the dictionary
+
+----------------------------------------
+SEMANTIC TASK
+----------------------------------------
+
+Determine whether the two records are semantically equivalent.
+
+Definitions:
+
+- SEMANTICALLY_EQUIVALENT:
+  Differences do NOT change the meaning of the entity
+
+- SEMANTICALLY_DIFFERENT:
+  Differences DO change the meaning of the entity
+
+- UNCERTAIN:
+  Not enough information or ambiguous case
+
+----------------------------------------
+PERMISSIVENESS FACTOR
+----------------------------------------
+
+You are given a parameter:
+
+permissiveness ∈ [0,1]
+
+Interpretation:
+
+- 0.0 → STRICT
+  Any detectable difference is likely SEMANTICALLY_DIFFERENT
+
+- 0.5 → MODERATE
+  Ignore minor numeric or formatting differences
+
+- 1.0 → LENIENT
+  Accept differences unless they clearly change the ontology of the entity
+
+Guidelines:
+
+- Higher permissiveness → tolerate:
+  - small numeric deviations
+  - formatting differences
+  - equivalent textual variations
+
+- Lower permissiveness → treat even small deviations as meaningful
+
+----------------------------------------
+EVALUATION RULES
+----------------------------------------
+
+1. Compare ALL fields jointly (entity-level, not isolated fields)
+2. Ignore pure formatting differences (case, spacing, encoding)
+3. Use tolerance for numeric values (implicit or inferred)
+4. Focus on whether the REAL-WORLD meaning changes
+5. Do NOT assume external business logic
+6. If unsure → UNCERTAIN
+
+----------------------------------------
+OUTPUT FORMAT (STRICT)
+----------------------------------------
+
+Return ONLY valid JSON.
+
+One JSON per entity:
+
+{
+  "id": "<primary_key>",
+  "category": "SEMANTICALLY_EQUIVALENT | SEMANTICALLY_DIFFERENT | UNCERTAIN",
+  "confidence_of_category": 0.0,
+  "affected_columns": ["col1", "col2"],
+  "explanation": "short and precise reasoning",
+  "normalization_suggested": "SQL statement or null"
+}
+
+----------------------------------------
+CONSTRAINTS
+----------------------------------------
+
+- No text outside JSON
+- Be consistent with the permissiveness parameter
+- Be conservative before labeling as SEMANTICALLY_DIFFERENT
+- Prefer UNCERTAIN over incorrect classification
+
+----------------------------------------
+INPUT
+----------------------------------------
+
+permissiveness: 1
+
+DATASET_A:
+{dataset_a}
+
+DATASET_B:
+{dataset_b}
+
 """
