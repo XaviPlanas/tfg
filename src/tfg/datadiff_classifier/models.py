@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import Enum
 import json
 import hashlib  
@@ -39,18 +39,24 @@ class DiffRow:
 
 @dataclass
 class DiffClassification:
-    key:                    any
-    accion:                 DiffAction
-    categoria:              DiffCategory
-    confianza:              float
-    columnas_afectadas:     list[str]
-    explicacion:            str
-    normalizacion_sugerida: str
-    row_a:                  dict
-    row_b:                  dict
+    key: any
+    accion: DiffAction
+    categoria: DiffCategory
+    confianza: float
+    columnas_afectadas: list[str]
+    explicacion: str
+    normalizacion_sugerida: str | None
+    row_a: dict
+    row_b: dict
+
+    def to_dict(self) -> dict:
+        data = asdict(self)
+        # convertir enums
+        data["accion"] = self.accion.value if self.accion else None
+        data["categoria"] = self.categoria.value if self.categoria else None
+        return data
 
     def to_json(self) -> str:
-        import json
         return json.dumps(self.to_dict(), ensure_ascii=False)
 
 
