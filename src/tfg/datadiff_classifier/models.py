@@ -16,29 +16,7 @@ class DiffAction(Enum):
     INSERT = "INSERT"
     DELETE = "DELETE"
     UPDATE = "UPDATE"
-@dataclass
-class DiffRow:
-    """Par de filas divergentes devueltas por data-diff."""
-    key:        any
-    row_a:      dict
-    row_b:      dict
-    source_a:   str   # ej. "mysql://...titanic"
-    source_b:   str   # ej. "postgresql://...titanic"
-@dataclass
-class DiffClassification:
-    key:                    any
-    accion:                 DiffAction
-    categoria:              DiffCategory
-    confianza:              float
-    columnas_afectadas:     list[str]
-    explicacion:            str
-    normalizacion_sugerida: Optional[str]
-    row_a:                  dict
-    row_b:                  dict
 
-    def to_json(self) -> str:
-        import json
-        return json.dumps(self.to_dict(), ensure_ascii=False)
 @dataclass
 class DiffEvent:
     """Evento de diferencia, que contiene una columna divergente.
@@ -48,7 +26,34 @@ class DiffEvent:
     columna:    str
     valor_a:    any
     valor_b:    any
-    accion:     DiffAction
+@dataclass
+class DiffRow:
+    """Par de filas divergentes devueltas por data-diff."""
+    key:        any
+    row_a:      dict
+    row_b:      dict
+    source_a:   str   # ej. "mysql://...titanic"
+    source_b:   str   # ej. "postgresql://...titanic"
+    accion:     DiffAction = None
+    eventos:    list[DiffEvent] = None
+
+@dataclass
+class DiffClassification:
+    key:                    any
+    accion:                 DiffAction
+    categoria:              DiffCategory
+    confianza:              float
+    columnas_afectadas:     list[str]
+    explicacion:            str
+    normalizacion_sugerida: str
+    row_a:                  dict
+    row_b:                  dict
+
+    def to_json(self) -> str:
+        import json
+        return json.dumps(self.to_dict(), ensure_ascii=False)
+
+
 
 @dataclass
 class SegmentStructure:
