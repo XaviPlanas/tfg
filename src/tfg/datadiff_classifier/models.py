@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
-
+import json
+import hashlib  
 class DiffCategory(Enum):
     # REAL                    = "REAL"
     # FALSO_POSITIVO_TIPO     = "FALSO_POSITIVO_TIPO"
@@ -35,6 +35,10 @@ class DiffClassification:
     normalizacion_sugerida: Optional[str]
     row_a:                  dict
     row_b:                  dict
+
+    def to_json(self) -> str:
+        import json
+        return json.dumps(self.to_dict(), ensure_ascii=False)
 @dataclass
 class DiffEvent:
     """Evento de diferencia, que contiene una columna divergente.
@@ -51,3 +55,15 @@ class SegmentStructure:
     """Estructura de un segmento de datos, que puede ser una tabla, un bloque de filas, o una fila individual."""
     columnas:  list[str]
     pk:        str   # "table", "row_block", "row"
+
+    def _normalized(self) -> str:
+        """Representación determinista del schema"""
+        return json.dumps({
+            "columnas": sorted(self.columnas),  # orden estable
+            "pk": self.pk
+        }, sort_keys=True)
+
+    def schema_version(self) -> str:
+        """Fingerprint del schema"""
+        normalized = self._normalized()
+        return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
