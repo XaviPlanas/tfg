@@ -298,7 +298,7 @@ class DiffClassifier:
         else:
             raise ValueError(f"Unsupported LLM provider: {self.llm_provider}")
 
-    def classify_one_row(self, row: DiffRow):
+    def classify_one_row(self, row: DiffRow) -> DiffClassification:
 
         prompt_text = self.prompt_template.format(
             source_a=row.source_a,
@@ -317,6 +317,7 @@ class DiffClassifier:
                 if clasificacion.accion == DiffAction.INSERT :
                     print(f"Clasificacion : {clasificacion}\n")
         
+        return clasificacion
 
     def classify_row_by_row ( self, diffrows: list[DiffRow] ) -> list[DiffClassification] :
         """
