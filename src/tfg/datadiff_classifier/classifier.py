@@ -220,7 +220,7 @@ class DiffClassifier:
             DiffCategory.SEMANTICALLY_DIFFERENT: 0,
             DiffCategory.UNCERTAIN: 0,
             DiffCategory.ERROR: 0,
-            Total : 0
+            'Total' : 0
         }
         for c in classifications:
             stats[c.categoria] += 1
@@ -362,16 +362,20 @@ class DiffClassifier:
            
         return clasificacion
 
-    def classify_row_by_row ( self, diffrows: list[DiffRow] ) -> list[DiffClassification] :
+    def classify_row_by_row ( self, diffrows: list[DiffRow] , max_rows: int = 0) -> list[DiffClassification] :
         """
         Clasifica la lista de diferencias llamando al LLM fila por fila
         """
         diffresults = []
+        n = 0
     
         for diff in diffrows:
             result = self.classify_one_row(diff)
             diffresults.append(result)
-            print(f"Resultado clasificación fila {diff.key}: {result}\n")
+            #print(f"Resultado clasificación fila {diff.key}: {result}\n")
+            if max_rows > 0 and n >= max_rows:
+                break
+            n+=1
         return diffresults
 
     def classify_batch(
