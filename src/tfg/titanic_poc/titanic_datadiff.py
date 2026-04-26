@@ -49,5 +49,13 @@ diffrows = clasificador.parse_diff_results(diffs=diff_results, metadata=metadata
 ###################################
 # Clasificación de las diferencias
 ###################################
+
 clasificaciones = []
-clasificaciones = clasificador.classify_row_by_row(diffrows)
+clasificaciones = clasificador.classify_row_by_row(diffrows,15)
+
+clasificador.show_statistics(clasificaciones)
+
+print("\nEjemplos de 10 clasificaciones:\n") 
+for c in clasificaciones[:10] :
+    print(c.to_json())
+
