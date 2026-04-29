@@ -12,7 +12,6 @@ from tfg.datadiff_classifier.models import DiffEvent, DiffRow, DiffClassificatio
 from tfg.datadiff_classifier.prompts import CLASSIFY_PROMPT_FROM_DICT_OPTIMIZED_2, PROMPT_ROW_BY_ROW_2, CONSTRAINED_OUTPUT_ROW_BY_ROW_2, \
         CLASSIFY_PROMPT_FROM_DICT_OPTIMIZED_QWEN2_5b, JSON_CONSTRAINED_OUTPUT, SCHEMA_CONTEXT_JSON,  \
         SYSTEM_PROMPT, CLASSIFY_PROMPT, PROMPT_PHI3, CLASSIFY_PROMPT_FROM_DICT_OPTIMIZED_1, CLASSIFY_PROMPT_SEMANTIC_ROW_DIFF
-from tfg.titanic_poc.titanic_utils import Config
 
 class DiffClassifier:
 
@@ -24,7 +23,8 @@ class DiffClassifier:
                  api_key: str = None,
                  prompt_template: str = None,
                  uncertainty_threshold: float = 0.7,
-                 ollama_use_chat: bool = False):
+                 ollama_use_chat: bool = False,
+                 DEBUG: bool = True):
         
         self.schema_context = schema_context or SCHEMA_CONTEXT_JSON
         self.llm_provider = llm_provider
@@ -34,7 +34,7 @@ class DiffClassifier:
         self.prompt_template = prompt_template or CLASSIFY_PROMPT_SEMANTIC_ROW_DIFF
         self.uncertainty_threshold = uncertainty_threshold
         self.ollama_use_chat = ollama_use_chat
-        
+        self.DEBUG = DEBUG
         # Initialize client based on provider
         if self.llm_provider == 'anthropic':
             self.client = anthropic.Anthropic(api_key=self.api_key)
@@ -66,7 +66,7 @@ class DiffClassifier:
         update = right_idx & left_idx
         all_pk = right_idx | left_idx
 
-        if Config.DEBUG : 
+        if self.DEBUG : 
             print(60*'=')
             print(f"Insertados   (INS) [{len(insert)}] : {insert}"  )
             print(f"Eliminados   (DEL) [{len(delete)}] : {delete}"  )
@@ -304,7 +304,7 @@ class DiffClassifier:
             print(response["response"])
             print("Total (ms):", response['total_duration']/1e6)
             print("Prompt eval (ms):", response['prompt_eval_duration']/1e6)
-            print("Generation (ms):", response['eval_∫∫duration']/1e6)
+            print("Generation (ms):", response['eval_dduration']/1e6)
 
         elif self.llm_provider == 'ollama' and self.ollama_use_chat:
             response = self.client.chat(
