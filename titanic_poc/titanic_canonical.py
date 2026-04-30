@@ -35,7 +35,7 @@ setup_logging(level="DEBUG")
 
 # Usar siempre el nombre explícito del módulo, no __name__
 # porque si se ejecuta como __main__, el logger queda fuera del árbol
-logger = logging.getLogger("titanic_poc.titanic_canonical")
+logger = logging.getLogger("tfg.titanic_poc.titanic_canonical")
 logger.debug("Cargando locales y configuración")
 
 SEPARATOR = "─" * 60
@@ -58,7 +58,7 @@ def __header_print(title):
     logger.debug(f"{SEPARATOR}")
 
 def paso1_load_config():
-    __header_print("PASO 1/5 — Cargar configuración canónica")
+    __header_print("PASO 1/5 — Cargar configuración del canonizador")
 
     with timed (logger, "Cargar configuración YAML") : 
         loaded = CanonicalConfigLoader.from_file(CFG_FILE)
@@ -66,9 +66,8 @@ def paso1_load_config():
     return loaded
 
 def paso2_build_and_apply_plans(loaded):
-
     __header_print("PASO 2/5 — Construir y aplicar planes de canonización")
-
+    
     logger.info("MySQL:")
     with timed (logger, "MySQL Cannonical Pipeline", level="INFO") : 
         pipeline_mysql = CanonicalPipeline(
@@ -79,11 +78,11 @@ def paso2_build_and_apply_plans(loaded):
         plan_mysql.report()
         pipeline_mysql.apply_plan(plan_mysql)
 
-    logging.info("\n  PostgreSQL:")
+    logger.info("PostgreSQL:")
     with timed (logger, "PostgreSQL Cannonical Pipeline") : 
         pipeline_pg = CanonicalPipeline(
             connection_uri = PG_URI,
-            table_name     = "titanic",
+            table_name     = "titanic_modified",
         )
         plan_pg = pipeline_pg.build_plan()
         logger.info(plan_pg.report())
@@ -100,7 +99,7 @@ def paso3_compare_with_datadiff():
                                                     #Debería ser el valor anterior y que el sistema lo detectara
         )
         table2_raw = connect_to_table(
-            PG_URI_DDIFF, "titanic", "PassengerId"
+            PG_URI_DDIFF, "titanic_modified", "PassengerId"
         )
     
     #TODO: Validación cruzada de cols ANTES de empezar con los esquemas
@@ -122,7 +121,7 @@ def paso3_compare_with_datadiff():
             MYSQL_URI_DDIFF, "titanic_canonical", "passenger_id"
         )
         table_pg_can = connect_to_table(
-            PG_URI_DDIFF, "titanic_canonical", "passenger_id"
+            PG_URI_DDIFF, "titanic_modified_canonical", "passenger_id"
         )
         diffs_can = list(diff_tables(table_mysql_can, table_pg_can))
     
@@ -202,7 +201,7 @@ def main():
     plan_mysql, plan_pg     = paso2_build_and_apply_plans(loaded) # Paso 2 - Canonizar en cada motor
     diffs_raw, diffs_can    = paso3_compare_with_datadiff() # Paso 3 - data-diff contra datasets canonizados
 
-    #TODO: results = paso4_classify_differences(diffs_can) # Paso 4 - clasificador IA
+    #results                 = paso4_classify_differences(diffs_can) # Paso 4 - clasificador IA
 
     logger.debug(f"{SEPARATOR}")
     logger.debug("  EJECUCIÓN COMPLETADA")
