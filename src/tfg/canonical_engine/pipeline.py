@@ -1,10 +1,15 @@
+# -*- coding: utf-8 -*-
 from sqlalchemy import create_engine, text
 from .introspection.inspector  import SchemaInspector
 from .dialect.base             import UnsupportedTransformation
 from .engine                   import PythonFallback
 from dataclasses               import dataclass
-from typing                    import Dict, List
+from typing                    import Dict, List, Optional
+import unicodedata
+import re
 
+import logging
+logger = logging.getLogger(__name__)
 @dataclass
 class CanonicalColumn:
     name:             str
@@ -12,6 +17,11 @@ class CanonicalColumn:
     python_fallback:  callable      # Función Python (si SQL no es posible)
     requires_download: bool         # True si se necesita descargar el dato
     information_loss: str
+    view_col_name:        Optional[str] = None
+
+    def __post_init__(self):        # Si no se ha definido un view_name , se asume name
+        if self.view_col_name is None:
+            self.view_col_name = self.name
 
 @dataclass
 class CanonicalPlan:
@@ -44,8 +54,9 @@ class CanonicalPlan:
         lines.append(
             f"Columnas descarga: {len(self.download_columns)}"
         )
+        logger.debug(lines)
+        
         return "\n".join(lines)
-
 
 class CanonicalPipeline:
 
@@ -68,9 +79,15 @@ class CanonicalPipeline:
         for col_name, canonical_type in canonical_types.items():
             try:
                 sql_expr = canonical_type.to_sql(self.dialect)
+                logger.debug(f"Dialect : {self.dialect.name}")
+                if self.dialect.name == "mysql" : #mySQL no cumple con ANSI SQL
+                     column_name    = f"`{col_name}`" 
+                else : 
+                     column_name    = f"\"{col_name}\"" #ANSI SQL usa \"
+                
                 columns[col_name] = CanonicalColumn(
-                    name              = col_name,
-                    sql_expression    = f"{sql_expr} AS {col_name}",
+                    name              = column_name,
+                    sql_expression    = f"{sql_expr} AS {self.inspector._normalize_column_name(column_name)}",
                     python_fallback   = None,
                     requires_download = False,
                     information_loss  = canonical_type.information_loss,
@@ -109,18 +126,16 @@ class CanonicalPipeline:
         return mapping.get(transformation, lambda v: v)
 
     def _build_view_sql(self, columns: dict) -> str:
-        expressions = [col.sql_expression for col in columns.values()]
-
-        return (
-            f"SELECT\n"
-            f"    {','.join(chr(10)+'    ' for _ in [''])}"
-            f"{(chr(10)+',    ').join(expressions)}\n"
-            f"FROM {self.table}"
-        )
+        expressions = [col.sql_expression for col in columns.values()] 
+        view_sql = f"""SELECT
+            {',\n    '.join(expressions)}
+            FROM {self.table}"""
+        logger.debug("_build_view_sql: {view_sql}")
+        return(view_sql)
 
     def apply_plan(self, plan: CanonicalPlan) -> None:
         """
-        Materializa el plan creando una vista en el motor remoto
+        Materializa el plan creando una VISTA SQL en el motor remoto
         para las columnas que pueden canonizarse en SQL,
         y aplicando los fallbacks Python al resultado para
         las columnas que requieren descarga.
@@ -128,17 +143,21 @@ class CanonicalPipeline:
         view_name = f"{self.table}_canonical"
 
         with self.engine.connect() as conn:
+           
+            drop_sql = f"DROP VIEW IF EXISTS {view_name}"
+            logger.debug(drop_sql)
             conn.execute(
-                text(f"DROP VIEW IF EXISTS {view_name}")
+                text(drop_sql)
             )
+
+            create_sql = f"CREATE VIEW {view_name} AS {plan.view_sql}"
+            logger.debug(create_sql)
             conn.execute(
-                text(f"CREATE VIEW {view_name} AS {plan.view_sql}")
+                text(create_sql)
             )
             conn.commit()
 
-        print(f"Vista canónica creada: {view_name}")
+        logger.info(f"Vista canónica creada: {view_name}")
         if plan.download_columns:
-            print(
-                f"⚠ Las siguientes columnas requieren fallback Python "
-                f"(se descargarán los valores): {plan.download_columns}"
-            )
+            logger.warning(f"Las siguientes columnas requieren fallback Python (se descargarán los valores): {plan.download_columns}")
+            

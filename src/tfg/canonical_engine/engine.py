@@ -1,5 +1,7 @@
 import unicodedata
 from .dialect.base import UnsupportedTransformation
+import logging
+logger = logging.getLogger(__name__)
 
 class PythonFallback:
     """

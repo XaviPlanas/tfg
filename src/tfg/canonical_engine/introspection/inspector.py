@@ -2,6 +2,11 @@
 from sqlalchemy import create_engine, inspect, text
 from .type_mapper import TypeMapper
 
+import re
+import unicodedata
+
+import logging
+logger = logging.getLogger(__name__)
 class SchemaInspector:
     """
     Inspecciona el esquema de una tabla remota y devuelve
@@ -10,7 +15,7 @@ class SchemaInspector:
     """
 
     def __init__(self, connection_uri: str):
-        print(f"Connection URL: {connection_uri}")
+        logger.info(f"Connection URL: {connection_uri}")
         self.engine  = create_engine(connection_uri)
         self.mapper  = TypeMapper()
         self.dialect = self._detect_dialect()
@@ -19,7 +24,32 @@ class SchemaInspector:
         from ..dialect.registry import DialectRegistry
         dialect_name = self.engine.dialect.name  # 'mysql', 'postgresql', etc.
         return DialectRegistry.get(dialect_name)
-
+    
+    @staticmethod
+    def _normalize_column_name(name: str) -> str:
+        """Creamos una versión del nombre de columna normalizado"""
+        logger.trace(f"Columna con valor {name} al entrar")
+        # 1. quitar acentos
+        name = unicodedata.normalize('NFKD', name)
+        name = name.encode('ascii', 'ignore').decode('ascii')
+        logger.trace(f"Columna con valor {name} tras paso 1/5 (sin acentos)")
+        # 2. camelCase → snake_case
+        name = re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', name)
+        logger.trace(f"Columna con valor {name} tras paso 2/5 (camelCase)")
+        # 3. minúsculas
+        name = name.lower()
+        logger.trace(f"Columna con valor {name} tras paso 3/5 (minúsculas)")
+        # 4. reemplazar caracteres no válidos por _
+        name = re.sub(r'[^a-z0-9]+', '_', name)
+        logger.trace(f"Columna con valor {name} tras paso 4/5 (_)")
+        # 5. quitar underscores extremos
+        name = name.strip('_')
+        logger.trace(f"Columna con valor {name} tras paso final 5/5 (strip de _)")
+        #controlamos que no se generen nombres vacíos:
+        if not name:
+            raise ValueError("La normalización produjo un nombre de columna vacío")
+        return name
+    
     def inspect_table(self, table_name: str) -> dict:
         """
         Devuelve un diccionario {column_name: CanonicalType}
@@ -30,7 +60,11 @@ class SchemaInspector:
 
         canonical_types = {}
         for col in columns:
-            col_name    = f"\"{col["name"]}\""
+            if self._detect_dialect() == "mysql" : #mySQL no cumple con ANSI SQL
+                col_name    = f"{col["name"]}" 
+            else : 
+                col_name    = f"\"{col["name"]}\"" #ANSI SQL usa \"
+            view_name   = self._normalize_column_name(f"{col["name"]}")
             sql_type    = col["type"]
             nullable    = col["nullable"]
             canonical   = self.mapper.map(
