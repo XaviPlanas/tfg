@@ -79,6 +79,31 @@ print(f"Diferencias tras canonización: {len(diffs)}")
 | 29 | Normalizar comillas/escaping | 7 | 6 | 1 | No |
 | 30 | Columnas a snake_case | 9 | 8 | 0 | Sí |
 
-**TODO:** Añadir columna família de la regla
+# v2
+La canonización se separa en dos fases antes y después del datadiff:
+	- PRE (canonización)
+	- POST ( estandarización ) : se aplican las funciones que no pueden resolver remotamente los dos motores comparados y que por lo tanto requieren de un fallback a Python
+# v1 
+**Propósito**: ( por inferencia ) -> convertimos a un modelo estandard los tipos
+**Módulo**: src/canonical_engine/
+**Variantes**: autotipado y fichero de configuración
+El autotipado se utiliza como autoasistente previo al fichero de configuración 
+canonical_engine/ : materializar una vista con la versión canónica de las columnas.
+	==pipeline.py== : Colección de clases de datos Column, Plan y Pipeline
+	==engine.py:==  implementa funciones python de fallback.
 
-# Tabla compatibilidades regla/motores ( y expresiones SQL equivalentes adoptadas )
+Pasos:
+ 1. Construimos planes canónicos por motor : CanonicalPipeline().build_plan()
+	 1. ./introspection/ : Se detecta tipo (type.py) y se abstrae a tipo canónico (type_mapper.py)
+	 2. cada tipo tiene asociados funciones base (base.py)
+	 3. [[Transformaciones]]: para cada dialecto ./dialect/ se definen las SQL equivalentes a las funciones base, cuando no existe el equivalente se genera un *UnsupportedTransformation* y se vincula a una fallback en python que se gestiona desde engine.py.
+ 2. Revisamos el plan CanonicalPipeline().report()
+ 3. Creamos las vistas en cada motor CanonicalPipeline().apply_plan()
+ 4. Buscamos diferencias con diff-data  sobre las vistas canónicas : diff_tables()
+
+Crear un paso que no acceda externamente si no desde el TableSegment.
+
+![[Canonización en 2 etapas (PRE y POST).png]]
+
+
+
