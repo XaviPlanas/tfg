@@ -32,7 +32,6 @@ class DiffClassifier:
                  uncertainty_threshold: float = 0.7,
                  max_retries: int = 3):
         
-        logger.debug(f"Inicializando DiffClassifier con provider={llm_provider}, model={model}, temperature={temperature}")
         
         self.schema_context = schema_context or SCHEMA_CONTEXT_TITANIC
         self.llm_provider = llm_provider
@@ -55,6 +54,9 @@ class DiffClassifier:
             self.client = Client(host='http://127.0.0.1:11434')
         else:
             raise ValueError(f"LLM no soportado: {self.llm_provider}")  
+        
+        logger.debug(f"Inicializando DiffClassifier con provider={llm_provider}, model={model}, temperature={temperature}")
+        logger.debug(f"Prompt SYSTEM: {self._system}")
     
     # =============================================
     # ==== UTILIDADES
@@ -116,17 +118,17 @@ class DiffClassifier:
     def _build_classification(self, item: DiffRow | DiffEvent, data: dict) -> DiffClassification:
         try:
             logger.debug(f"Construyendo clasificación para item: {item}, con datos: {data}")
-            cat_str = data.get("category", "UNCERTAIN").upper()
+            cat_str = data.get("categoria", "UNCERTAIN").upper()
             categoria = DiffCategory[cat_str] if cat_str in DiffCategory.__members__ else DiffCategory.UNCERTAIN
 
             return DiffClassification(
                 key=item.key,
-                accion=getattr(item, 'accion', DiffAction.UPDATE),
+                accion=getattr(item, 'accion', None) or DiffAction.UPDATE,
                 categoria=categoria,
-                confianza=float(data.get("confidence_of_category", 0.0)),
-                columnas_afectadas=data.get("affected_columns", []),
-                explicacion=data.get("explanation", ""),
-                normalizacion_sugerida=data.get("normalization_suggested"),
+                confianza=float(data.get("confianza", 0.0)),
+                columnas_afectadas=data.get("columnas_afectadas", []),
+                explicacion=data.get("explicacion", ""),
+                normalizacion_sugerida=data.get("normalizacion_sugerida",""),
                 row_a=getattr(item, 'row_a', None) if isinstance(item, DiffRow) else None,
                 row_b=getattr(item, 'row_b', None) if isinstance(item, DiffRow) else None
             )
@@ -158,6 +160,8 @@ class DiffClassifier:
         )       
         
         messages.append({"role": "user", "content": prompt})
+        
+        logger.trace(f"Construyendo mensaje para LLM Haiku: {messages}")
         
         return messages
     
@@ -313,11 +317,17 @@ class DiffClassifier:
         """Estadísticas de clasificación."""
         from collections import Counter
         stats = Counter(c.categoria for c in classifications)
+        actions = Counter(c.accion for c in classifications)
 
         print("\n" + "="*60)
         print("REPORTE DE CLASIFICACIÓN")
         print("="*60)
-        print(f"Total procesado : {len(classifications):>25}")
+        print(f"Total procesado {'':25}: {len(classifications):4d}")
+        print("--- Clasificación por categoría -----------")
         for cat, count in stats.most_common():
             print(f"{cat.name:25} : {count:4d}")
+        print("--- Clasificación por acción --------------")
+        for action, count in actions.most_common():
+            print(f"{action.name:25} : {count:4d}")
         print("="*60)
+        
