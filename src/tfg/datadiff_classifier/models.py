@@ -5,9 +5,10 @@ import hashlib
 
 class DiffCategory(Enum):
     CANONIZABLE          = "canonizable"
-    EQUIVALENT           = "equivalent"
-    CONTEXTUAL_DEPENDENT = "contextual_dependent" # depende de conocimiento de dominio
-    DIFFERENT_SEMANTIC   = "different_semantic"
+    EQUIVALENT           = "equivalent_semantic"
+    DIFFERENT_CONTEXTUAL = "different_contextual"
+    DIFFERENT_STRUCTURAL = "different_structural"
+    DIFFERENT_SEMANTICAL = "different_semantical"
     UNCERTAIN            = "uncertain"
     ERROR                = "error"
 class DiffAction(Enum):
@@ -66,7 +67,7 @@ class DiffClassification:
     def needs_review(self) -> bool:
         """True si requiere revisión humana."""
         return self.categoria in (
-            DiffCategory.CONTEXTUAL_DEPENDENT,
+            DiffCategory.DIFFERENT_CONTEXTUAL, #requiere conocimiento de dominio
             DiffCategory.UNCERTAIN,
             DiffCategory.ERROR
         )
