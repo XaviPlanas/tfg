@@ -318,16 +318,33 @@ class DiffClassifier:
         from collections import Counter
         stats = Counter(c.categoria for c in classifications)
         actions = Counter(c.accion for c in classifications)
+        falsos_positivos = sum(1 for c in classifications if c.is_false_positive())
+        neded_review = sum(1 for c in classifications if c.needs_review())
+        total = len(classifications)
 
-        print("\n" + "="*60)
-        print("REPORTE DE CLASIFICACIÓN")
-        print("="*60)
-        print(f"Total procesado {'':25}: {len(classifications):4d}")
-        print("--- Clasificación por categoría -----------")
+        WIDTH = 60
+        LABEL = 50   # ancho fijo para etiquetas
+
+        print("\n" + "=" * WIDTH)
+        print("REPORTE DE CLASIFICACIÓN".center(WIDTH))
+        print("=" * WIDTH)
+
+        print(f"{'Total procesado':<{LABEL}} : {len(classifications):>4d}")
+
+        print("\n--- Clasificación por categoría ---")
         for cat, count in stats.most_common():
-            print(f"{cat.name:25} : {count:4d}")
-        print("--- Clasificación por acción --------------")
+            print(f"{cat.name:<{LABEL}} : {count:>4d}")
+
+        print("\n--- Clasificación por acción ---")
         for action, count in actions.most_common():
-            print(f"{action.name:25} : {count:4d}")
-        print("="*60)
-        
+            print(f"{action.name:<{LABEL}} : {count:>4d}")
+
+        print("\n--- Detalles ---")
+        print(f"{'Falsos positivos (canonizables/equivalentes)':<{LABEL}} : "
+            f"{falsos_positivos:>4d}/{total:<4d} ({falsos_positivos/total:.2%})")
+
+        print(f"{'Requieren revisión (contextual/uncertain/error)':<{LABEL}} : "
+            f"{neded_review:>4d}/{total:<4d} ({neded_review/total:.2%})")
+
+        print("=" * WIDTH)
+                
