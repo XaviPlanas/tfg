@@ -393,7 +393,7 @@ class DiffReport:
         self,
         false_positives: bool = True,
         review:          bool = True,
-        avoid_real_differences: bool = True,
+        real_differences: bool = False,
     ) -> None:
         """
         Reemplaza classifier.report_details().
@@ -431,7 +431,7 @@ class DiffReport:
             for c in rv:
                 _print_one(c)
 
-        if not avoid_real_differences:
+        if real_differences:
             real = [c for c in self.classifications if c.is_real_difference()]
             print(f"\n🔴 Diferencias reales ({len(real)}):")
             for c in real:

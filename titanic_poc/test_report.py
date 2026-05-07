@@ -5,11 +5,10 @@ Cómo integrar DiffReport con el classifier.py real.
 Muestra la sustitución de report_statistics() y report_details()
 y la generación del informe completo en JSON y Markdown.
 
-Ejecutar:
-    PYTHONPATH=src ANTHROPIC_API_KEY=sk-... python3 uso_report.py
 """
-
+import os
 import json
+
 from tfg.datadiff_classifier.classifier import DiffClassifier
 from tfg.datadiff_classifier.report     import (
     DiffReport, ReportNarrator, ReportExporter
@@ -162,7 +161,6 @@ print(json.dumps(pipeline, indent=2))
 # 5. Narrativa LLM (una sola llamada)
 # ─────────────────────────────────────────────────────────────────
 
-import os
 if os.environ.get("ANTHROPIC_API_KEY"):
     narrator  = ReportNarrator()
     narrative = narrator.full_narrative(report, pipeline_stats=pipeline)
