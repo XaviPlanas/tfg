@@ -17,7 +17,8 @@ from sqlalchemy import (
 # -------------------
 # CONFIG
 # -------------------
-DB1_URL = "sqlite:///data/db/wikipedia.db"
+DB1_URL = "sqlite:///data/db/wikipedia_DB1.db"
+DB2_URL = "sqlite:///data/db/wikipedia_DB2.db"
 
 SNAPSHOT_DIR = "data/raw/"
 
@@ -37,6 +38,7 @@ logger = logging.getLogger("tfg.wikipedia_poc.wiki_load_to_db")
 # DB SETUP
 # -------------------
 engine1 = create_engine(DB1_URL, echo=False)
+engine2 = create_engine(DB2_URL, echo=False)
 metadata = MetaData()
 
 # -------------------
@@ -79,7 +81,8 @@ def create_snapshot_table(table_name):
         Column("error", Text),
     )
 
-    table.create(engine, checkfirst=True)
+    table.create(engine1, checkfirst=True)
+    table.create(engine2, checkfirst=True)
     return table
 
 
@@ -88,6 +91,10 @@ def create_snapshot_table(table_name):
 # -------------------
 def is_table_populated(table):
     with engine1.connect() as conn:
+        result = conn.execute(table.select().limit(1)).fetchone()
+        return result is not None
+    
+    with engine2.connect() as conn:
         result = conn.execute(table.select().limit(1)).fetchone()
         return result is not None
 
@@ -111,7 +118,7 @@ def import_json_dynamic(file_path):
         data = json.load(f)
 
     if not data:
-        logger.warning(f"⚠️ JSON vacío: {file_path}")
+        logger.warning(f"JSON vacío: {file_path}")
         return
 
     rows = []
@@ -137,6 +144,9 @@ def import_json_dynamic(file_path):
 
     # Insert batch
     with engine1.begin() as conn:
+        conn.execute(table.insert(), rows)
+    
+    with engine2.begin() as conn:
         conn.execute(table.insert(), rows)
 
     logger.info(f"Insertados {len(rows)} registros en {table_name}")
